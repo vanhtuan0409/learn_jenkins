@@ -6,10 +6,6 @@ pipeline {
     environment {
         IMAGE_NAME = "vanhtuan/sample_go_app"
     }
-    
-    parameters {
-        booleanParam(defaultValue: true, description: '', name: 'userFlag')
-    }
 
     stages {
         stage('build') {
