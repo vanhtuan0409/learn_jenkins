@@ -3,12 +3,16 @@ def app
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "vanhtuan/sample_go_app"
+    }
+
     stages {
         stage('build') {
             steps {
                 echo "Starting to build docker image"
                 script {
-                    app = docker.build("sample_go_app", "./sample_project")
+                    app = docker.build("${env.IMAGE_NAME}", "./sample_project")
                 }
             }
         }
@@ -17,10 +21,34 @@ pipeline {
             steps {
                 script {
                     app.inside {
-                        sh 'app > /var/log/app.txt &'
+                        sh 'app &'
                         sh 'curl -s localhost:7777'
                     }
                 }
+            }
+        }
+
+        stage('input') {
+            steps {
+                script {
+                    milestone 1
+                    timeout(time: 2, unit: 'MINUTES') {
+                        input "Should publish to docker hub?"
+                    }
+                    milestone 2
+                }
+            }
+        }
+
+        stage('publish') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        app.push("${env.BUILD_NUMBER}")
+                        app.push("latest")
+                    }
+                }
+                
             }
         }
     }
